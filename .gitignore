@@ -1,0 +1,19 @@
+# Midtrans credentials (jangan pernah di-commit)
+php/config.php
+.env
+
+# Log
+php/*.log
+*.log
+
+# Dependencies
+/vendor/
+node_modules/
+
+# Database lokal (Fase 3)
+*.sqlite*
+*.db
+
+# OS / editor
+.DS_Store
+Thumbs.db

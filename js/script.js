@@ -1,7 +1,32 @@
 //Toggle class active for hamburger menu
 const nN = document.querySelector('.navbar-nav');
+const pendingPanel = document.querySelector('.pending-orders');
+const pendingButton = document.querySelector('#pending-orders-button');
+
+const closePendingPanel = () => {
+  if (!pendingPanel || !pendingPanel.classList.contains('active')) {
+    return;
+  }
+  pendingPanel.classList.remove('active');
+  window.dispatchEvent(new CustomEvent('rll:pending-close'));
+};
+
+const openPendingPanel = () => {
+  if (!pendingPanel) {
+    return;
+  }
+  pendingPanel.classList.add('active');
+  window.dispatchEvent(new CustomEvent('rll:pending-open'));
+};
+
 // ketika hamburger menu diklik
 document.querySelector('#hamburger-menu').onclick = (e) => {
+  const willOpen = !nN.classList.contains('active');
+  if (willOpen) {
+    ShopCart.classList.remove('active');
+    sf.classList.remove('active');
+    closePendingPanel();
+  }
   nN.classList.toggle('active');
   e.preventDefault();
 };
@@ -13,13 +38,40 @@ const searchButton = document.querySelector('#search-button');
 const ShopCart = document.querySelector('.shopping-cart')
 // ketika shopping cart item diklik
 document.querySelector('#shopping-cart-button').onclick = (e) => {
+  const willOpen = !ShopCart.classList.contains('active');
+  if (willOpen) {
+    sf.classList.remove('active');
+    nN.classList.remove('active');
+    closePendingPanel();
+  }
   ShopCart.classList.toggle('active');
   e.preventDefault();
 };
+// ketika pending orders button diklik
+if (pendingButton) {
+  pendingButton.onclick = (e) => {
+    const willOpen = !pendingPanel.classList.contains('active');
+    if (willOpen) {
+      ShopCart.classList.remove('active');
+      sf.classList.remove('active');
+      nN.classList.remove('active');
+      openPendingPanel();
+    } else {
+      closePendingPanel();
+    }
+    e.preventDefault();
+  };
+}
 // ketika search button diklik
 searchButton.onclick = (e) => {
+  const willOpen = !sf.classList.contains('active');
+  if (willOpen) {
+    ShopCart.classList.remove('active');
+    nN.classList.remove('active');
+    closePendingPanel();
+    sb.focus();
+  }
   sf.classList.toggle('active');
-  sb.focus();
   e.preventDefault();
 };
 // klik di luar elemen untuk menutup
@@ -34,6 +86,15 @@ document.addEventListener('click', function(e) {
   }
   if(!ShopCartButton.contains(e.target) && !ShopCart.contains(e.target)) {
     ShopCart.classList.remove('active');
+  }
+  const path = e.composedPath();
+  if (
+    pendingButton &&
+    pendingPanel &&
+    !path.includes(pendingButton) &&
+    !path.includes(pendingPanel)
+  ) {
+    closePendingPanel();
   }
 });
 // Modal Box Item Detail

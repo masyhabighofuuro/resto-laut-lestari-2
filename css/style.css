@@ -5,14 +5,17 @@
   --white-color: white;
 }
 
+html {
+  scroll-behavior: smooth;
+}
+
 * {
   margin: 0;
-  pad: 0;
+  padding: 0;
   box-sizing: border-box;
   outline: none;
   border: none;
   text-decoration: none;
-  scroll-behavior: smooth;
 }
 
 body {
@@ -287,6 +290,273 @@ body {
   margin: 1rem auto;
   cursor: pointer;
 }
+
+.form-container .checkout-button.disabled {
+  background-color: gray;
+  cursor: not-allowed;
+}
+
+/* Pending Orders */
+#pending-orders-button {
+  position: relative;
+}
+
+#pending-orders-button .qty-badge {
+  display: inline-block;
+  padding: 1px 5px;
+  background-color: red;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  position: absolute;
+  top: 5px;
+  right: -10px;
+}
+
+.pending-orders {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: -100%;
+  max-height: calc(100vh - 6rem);
+  max-height: calc(100dvh - 6rem);
+  width: min(35rem, calc(100vw - 2rem));
+  padding: 0 1.5rem 1.5rem;
+  background-color: color-mix(in srgb, var(--opposite-bg-color) 90%, transparent);
+  color: var(--bg-color);
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--primary-color) 60%, transparent) transparent;
+  overscroll-behavior-y: contain;
+  transition: ease 0.6s;
+}
+
+.pending-orders.active {
+  right: 0;
+}
+
+.pending-orders h4 {
+  padding: 1.5rem 0;
+  text-align: center;
+  font-size: 1.3rem;
+}
+
+.pending-order {
+  padding: 1.2rem 0;
+  border-bottom: 1px dashed var(--white-color);
+}
+
+.pending-order-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
+  font-size: 1.1rem;
+}
+
+.pending-countdown {
+  color: #ffd28a;
+  font-size: 0.95rem;
+  white-space: nowrap;
+}
+
+.pending-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0.6rem 0;
+  font-size: 1rem;
+}
+
+.pending-items {
+  font-size: 1.05rem;
+}
+
+.pending-items details {
+  margin-top: 0.4rem;
+}
+
+.pending-items summary {
+  cursor: pointer;
+}
+
+.pending-item-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.2rem 0;
+}
+
+.pending-total {
+  margin-top: 0.6rem;
+  font-weight: bold;
+}
+
+.pending-actions,
+.pending-cancel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+  margin-top: 1rem;
+}
+
+.pending-actions button,
+.pending-cancel-form button,
+.pending-lookup button {
+  padding: 0.6rem 1rem;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.pending-actions button:disabled,
+.pending-cancel-form button:disabled,
+.pending-lookup button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pending-pay,
+.pending-confirm,
+.pending-lookup button {
+  background-color: var(--primary-color);
+  color: var(--white-color);
+}
+
+.pending-cancel,
+.pending-back {
+  background-color: transparent;
+  color: var(--bg-color);
+  border: 1px solid currentColor;
+}
+
+.pending-cancel-form {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px dashed var(--white-color);
+  border-radius: 0.6rem;
+}
+
+.pending-cancel-form h5,
+.pending-lookup h5 {
+  font-size: 1.1rem;
+  margin-bottom: 0.6rem;
+}
+
+.pending-cancel-form p,
+.pending-lookup p {
+  font-size: 1rem;
+  margin-bottom: 0.6rem;
+}
+
+.pending-reason {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin: 0.5rem 0;
+  font-size: 1.05rem;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.pending-reason input[type='radio'] {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: var(--primary-color);
+  cursor: pointer;
+}
+
+.pending-cancel-form textarea,
+.pending-lookup input {
+  width: 100%;
+  padding: 0.5rem;
+  margin: 0.4rem 0;
+  font-size: 1rem;
+  background-color: var(--white-color);
+  color: var(--opposite-bg-color);
+  border-radius: 0.4rem;
+}
+
+.pending-lookup.receipt-lookup {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.pending-lookup {
+  border-top: 1px dashed var(--white-color);
+  margin-top: 1rem;
+  padding-top: 1rem;
+}
+
+.pending-lookup-message {
+  margin-top: 0.6rem;
+  font-size: 1rem;
+}
+
+.pending-error {
+  padding: 1rem 0;
+  text-align: center;
+  color: #ffb3b3;
+}
+
+.checkout-message {
+  position: fixed;
+  top: 6rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10000;
+  width: max-content;
+  max-width: min(90vw, 32rem);
+  padding: 0.9rem 1.2rem;
+  border-radius: 0.6rem;
+  background-color: color-mix(in srgb, var(--opposite-bg-color) 92%, transparent);
+  color: var(--white-color);
+  font-size: 0.95rem;
+  line-height: 1.4;
+  text-align: center;
+  box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.3);
+}
+
+.checkout-message[hidden],
+.checkout-message [hidden] {
+  display: none !important;
+}
+
+.receipt-link {
+  display: inline-block;
+  margin-top: 0.55rem;
+  padding: 0.35rem 0.8rem;
+  border-radius: 999px;
+  background-color: var(--white-color);
+  color: var(--opposite-bg-color);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.receipt-link[hidden] {
+  display: none !important;
+}
+
+.receipt-link:hover {
+  background-color: #ffd166;
+  color: var(--opposite-bg-color);
+}
+
+.checkout-message.success {
+  border-left: 4px solid #7ee2a8;
+}
+
+.checkout-message.pending {
+  border-left: 4px solid #ffd166;
+}
+
+.checkout-message.error {
+  border-left: 4px solid #ff8a80;
+}
 /* Shopping Cart End */
 /* Navbar end*/
 
@@ -410,7 +680,7 @@ body {
 .about .row .content p {
   margin-bottom: 0.8rem;
   font-size: 1.2rem;
-  font-weight: 100px;
+  font-weight: 300;
   line-height: 1.4;
 }
 /* About section end */
@@ -427,7 +697,7 @@ body {
 .menu p, .menu-bundling p, .contact p {
   max-width: 40rem;
   font-size: 1.2rem;
-  font-weight: 100px;
+  font-weight: 300;
   line-height: 1.4;
 }
 

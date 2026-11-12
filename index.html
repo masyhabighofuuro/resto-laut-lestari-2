@@ -20,10 +20,32 @@
       defer
       src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.12/dist/cdn.min.js"
     ></script>
+    <!-- Midtrans Snap (sandbox). Ganti URL & client key saat production. -->
+    <script
+      src="https://app.sandbox.midtrans.com/snap/snap.js"
+      data-client-key="SB-Mid-client-QDhdnqS_xqmeVP-ub9E-fvMz"
+    ></script>
     <!-- App -->
     <script src="src/app.js"></script>
   </head>
-  <body>
+  <body x-data>
+    <div
+      class="checkout-message"
+      id="checkout-message"
+      role="status"
+      aria-live="polite"
+      hidden
+    >
+      <span id="checkout-message-text"></span>
+      <a
+        id="receipt-link"
+        class="receipt-link"
+        href="#"
+        target="_blank"
+        rel="noopener noreferrer"
+        hidden
+      >Lihat struk</a>
+    </div>
     <!-- Navbar start -->
     <nav class="navbar" x-data>
       <a href="#" class="navbar-logo">resto<span>lautlestari</span>.</a>
@@ -36,6 +58,18 @@
       </div>
       <div class="navbar-extra">
         <a href="#" id="search-button"><i data-feather="search"></i></a>
+        <a
+          href="#"
+          id="pending-orders-button"
+          aria-label="Pesanan belum dibayar"
+        >
+          <i data-feather="clock"></i>
+          <span
+            class="qty-badge"
+            x-show="$store.pendingOrders.count > 0"
+            x-text="$store.pendingOrders.count"
+          ></span>
+        </a>
         <a href="#" id="shopping-cart-button">
           <i data-feather="shopping-cart"></i>
           <span
@@ -80,23 +114,230 @@
         <div class="form-container" x-show="$store.cart.items.length">
           <form action="" id="checkOutForm">
             <h5>Customer Detail</h5>
-            <label for="name">
+            <label for="checkoutName">
               <span>Name</span>
-              <input type="text" name="name" id="checkoutName">
+              <input type="text" name="name" id="checkoutName" required>
             </label>
-            <label for="email">
+            <label for="checkoutEmail">
               <span>Email</span>
-              <input type="email" name="email" id="checkoutEmail">
+              <input type="email" name="email" id="checkoutEmail" required>
             </label>
-            <label for="phone">
+            <label for="checkoutPhone">
               <span>Phone</span>
-              <input type="tel" name="phone" id="checkoutPhone" autocomplete="off">
+              <input type="tel" name="phone" id="checkoutPhone" autocomplete="off" required>
             </label>
-            <button class="checkout-button" id="checkoutButton" type="submit" value="checkout">Checkout</button>
+            <button class="checkout-button disabled" id="checkoutButton" type="submit" value="checkout" disabled>Checkout</button>
           </form>
         </div>
       </div>
       <!-- Shopping Cart End -->
+
+      <!-- Pending Orders Start -->
+      <div class="pending-orders" x-data>
+        <template x-if="$store.pendingOrders.loading">
+          <h4>Memuat pesanan...</h4>
+        </template>
+
+        <template x-if="!$store.pendingOrders.loading && $store.pendingOrders.error">
+          <div class="pending-error" x-text="$store.pendingOrders.error"></div>
+        </template>
+
+        <template
+          x-if="!$store.pendingOrders.loading && !$store.pendingOrders.error && !$store.pendingOrders.items.length"
+        >
+          <h4>Tidak ada pesanan yang menunggu pembayaran</h4>
+        </template>
+
+        <template x-for="order in $store.pendingOrders.items" :key="order.order_id">
+          <div class="pending-order">
+            <div class="pending-order-head">
+              <strong x-text="order.order_id"></strong>
+              <span
+                class="pending-countdown"
+                x-text="$store.pendingOrders.remainingLabel(order)"
+              ></span>
+            </div>
+
+            <div class="pending-meta">
+              <span>
+                Dibuat:
+                <span x-text="$store.pendingOrders.formatDate(order.created_at)"></span>
+              </span>
+              <span>
+                Berlaku sampai:
+                <span x-text="$store.pendingOrders.formatDate(order.expires_at)"></span>
+              </span>
+            </div>
+
+            <div class="pending-items">
+              <span x-text="order.item_count + ' item'"></span>
+              <details>
+                <summary>Lihat rincian</summary>
+                <template x-for="item in order.items" :key="item.name">
+                  <div class="pending-item-row">
+                    <span x-text="item.name"></span>
+                    <span x-text="'x' + item.qty"></span>
+                  </div>
+                </template>
+              </details>
+            </div>
+
+            <div class="pending-total">
+              Total:
+              <span x-text="$store.pendingOrders.formatPrice(order.gross_amount)"></span>
+            </div>
+
+            <div
+              class="pending-actions"
+              x-show="$store.pendingOrders.cancelTargetId !== order.order_id"
+            >
+              <button
+                type="button"
+                class="pending-pay"
+                @click.prevent="$store.pendingOrders.resume(order)"
+                :disabled="!order.snap_token || $store.pendingOrders.busy"
+                x-text="$store.pendingOrders.busy ? 'Memproses...' : 'Lanjutkan bayar'"
+              ></button>
+              <button
+                type="button"
+                class="pending-cancel"
+                @click.prevent="$store.pendingOrders.openCancel(order)"
+                :disabled="$store.pendingOrders.busy"
+              >
+                Batalkan
+              </button>
+            </div>
+
+            <form
+              class="pending-cancel-form"
+              x-show="$store.pendingOrders.cancelTargetId === order.order_id"
+              @submit.prevent="$store.pendingOrders.submitCancel(order)"
+            >
+              <template x-if="$store.pendingOrders.cancelStep === 1">
+                <div>
+                  <h5>Alasan pembatalan</h5>
+                  <template x-for="reason in $store.pendingOrders.reasons" :key="reason.code">
+                    <label class="pending-reason">
+                      <input
+                        type="radio"
+                        name="cancelReason"
+                        :value="reason.code"
+                        x-model="$store.pendingOrders.cancelReason"
+                      />
+                      <span x-text="reason.label"></span>
+                    </label>
+                  </template>
+                  <textarea
+                    x-show="$store.pendingOrders.cancelReason === 'other'"
+                    x-model="$store.pendingOrders.cancelText"
+                    maxlength="200"
+                    rows="3"
+                    placeholder="Tulis alasan (5-200 karakter)"
+                  ></textarea>
+                  <div class="pending-cancel-actions">
+                    <button
+                      type="button"
+                      class="pending-confirm"
+                      @click.prevent="$store.pendingOrders.nextCancelStep()"
+                    >
+                      Lanjutkan
+                    </button>
+                    <button
+                      type="button"
+                      class="pending-back"
+                      @click.prevent="$store.pendingOrders.closeCancel()"
+                    >
+                      Kembali
+                    </button>
+                  </div>
+                </div>
+              </template>
+
+              <template x-if="$store.pendingOrders.cancelStep === 2">
+                <div>
+                  <p>
+                    Batalkan pesanan
+                    <strong x-text="order.order_id"></strong>?
+                  </p>
+                  <p x-text="$store.pendingOrders.cancelSummary()"></p>
+                  <div class="pending-cancel-actions">
+                    <button
+                      type="submit"
+                      class="pending-confirm"
+                      :disabled="$store.pendingOrders.busy"
+                      x-text="$store.pendingOrders.busy ? 'Membatalkan...' : 'Ya, batalkan pesanan'"
+                    ></button>
+                    <button
+                      type="button"
+                      class="pending-back"
+                      @click.prevent="$store.pendingOrders.cancelStep = 1"
+                    >
+                      Kembali
+                    </button>
+                  </div>
+                </div>
+              </template>
+            </form>
+          </div>
+        </template>
+
+        <form class="pending-lookup" @submit.prevent="$store.pendingOrders.lookup()">
+          <h5>Cari pesanan lama</h5>
+          <p>Masukkan kode pesanan dan email atau nomor telepon yang dipakai saat memesan.</p>
+          <input
+            type="text"
+            x-model="$store.pendingOrders.lookupOrderId"
+            placeholder="RLL-YYYYMMDD-xxxxxx"
+            autocomplete="off"
+          />
+          <input
+            type="text"
+            x-model="$store.pendingOrders.lookupContact"
+            placeholder="Email atau nomor telepon"
+            autocomplete="off"
+          />
+          <button
+            type="submit"
+            :disabled="$store.pendingOrders.busy"
+            x-text="$store.pendingOrders.busy ? 'Mencari...' : 'Cari pesanan'"
+          ></button>
+          <div
+            class="pending-lookup-message"
+            x-show="$store.pendingOrders.lookupMessage"
+            x-text="$store.pendingOrders.lookupMessage"
+          ></div>
+        </form>
+
+        <form
+          class="pending-lookup receipt-lookup"
+          method="post"
+          action="php/receipt.php"
+        >
+          <h5>Cek struk pembayaran</h5>
+          <p>Masukkan kode pesanan dan email atau nomor telepon yang dipakai saat memesan.</p>
+          <input
+            type="text"
+            name="order_id"
+            placeholder="RLL-YYYYMMDD-xxxxxx"
+            autocomplete="off"
+            maxlength="64"
+            required
+          />
+          <input
+            type="text"
+            name="contact"
+            placeholder="Email atau nomor telepon"
+            autocomplete="off"
+            maxlength="100"
+            required
+          />
+          <button type="submit">Cek struk</button>
+          <div class="pending-lookup-message">
+            Struk hanya tersedia untuk pesanan yang sudah dibayar.
+          </div>
+        </form>
+      </div>
+      <!-- Pending Orders End -->
     </nav>
     <!-- Navbar end -->
 
@@ -474,7 +715,9 @@
             <div class="bundling-price">
               Rp 57.000,- <span>Rp 63.000,-</span>
             </div>
-            <a href="#"
+            <a
+              href="#"
+              @click.stop.prevent="$store.cart.addById(Number($el.closest('.modal').id.replace('item-detail-modal', ''))); $el.closest('.modal').style.display = 'none'"
               ><i data-feather="shopping-cart"></i> <span>add to cart</span></a
             >
           </div>
@@ -512,7 +755,9 @@
             <div class="bundling-price">
               Rp 76.000,- <span>Rp 85.000,-</span>
             </div>
-            <a href="#"
+            <a
+              href="#"
+              @click.stop.prevent="$store.cart.addById(Number($el.closest('.modal').id.replace('item-detail-modal', ''))); $el.closest('.modal').style.display = 'none'"
               ><i data-feather="shopping-cart"></i> <span>add to cart</span></a
             >
           </div>
@@ -550,7 +795,9 @@
             <div class="bundling-price">
               Rp 69.000,- <span>Rp 77.000,-</span>
             </div>
-            <a href="#"
+            <a
+              href="#"
+              @click.stop.prevent="$store.cart.addById(Number($el.closest('.modal').id.replace('item-detail-modal', ''))); $el.closest('.modal').style.display = 'none'"
               ><i data-feather="shopping-cart"></i> <span>add to cart</span></a
             >
           </div>
@@ -588,7 +835,9 @@
             <div class="bundling-price">
               Rp 66.000,- <span>Rp 73.000,-</span>
             </div>
-            <a href="#"
+            <a
+              href="#"
+              @click.stop.prevent="$store.cart.addById(Number($el.closest('.modal').id.replace('item-detail-modal', ''))); $el.closest('.modal').style.display = 'none'"
               ><i data-feather="shopping-cart"></i> <span>add to cart</span></a
             >
           </div>
@@ -626,7 +875,9 @@
             <div class="bundling-price">
               Rp 128.000,- <span>Rp 142.000,-</span>
             </div>
-            <a href="#"
+            <a
+              href="#"
+              @click.stop.prevent="$store.cart.addById(Number($el.closest('.modal').id.replace('item-detail-modal', ''))); $el.closest('.modal').style.display = 'none'"
               ><i data-feather="shopping-cart"></i> <span>add to cart</span></a
             >
           </div>
@@ -664,7 +915,9 @@
             <div class="bundling-price">
               Rp 166.000,- <span>Rp 184.000,-</span>
             </div>
-            <a href="#"
+            <a
+              href="#"
+              @click.stop.prevent="$store.cart.addById(Number($el.closest('.modal').id.replace('item-detail-modal', ''))); $el.closest('.modal').style.display = 'none'"
               ><i data-feather="shopping-cart"></i> <span>add to cart</span></a
             >
           </div>
@@ -678,6 +931,6 @@
       feather.replace();
     </script>
     <!-- My JavaScript -->
-    <script src="js/script.js"></script>
+    <script src="js/script.js" async></script>
   </body>
 </html>

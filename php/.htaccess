@@ -1,0 +1,7 @@
+<FilesMatch "^(config|config\.example|orders|products|midtrans|config-loader|reconcile|device|api|receipt-lib)\.php$">
+    Require all denied
+</FilesMatch>
+
+<FilesMatch "\.(sqlite[^/]*|db|log)$">
+  Require all denied
+</FilesMatch>
